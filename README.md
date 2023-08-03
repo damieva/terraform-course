@@ -65,11 +65,11 @@ TargetGroup: objeto que identifica instancias que ve el balanceador para enrutar
   - podemos definir una vble de tipo 'any' y el tipo se le dara en la primera asignacion (tipado dinamico).
     en el caso de usar una lista de any cogera el tipo mas generico, que seria el string.
   - Ejemplo de bloque de definicion de una vble:
-`
+```
 variable "instance_type" {
   description = "type of EC2 instance"
   type        = string
   default     = "t2.micro"
 }
-`
+```
   
