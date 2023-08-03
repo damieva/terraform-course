@@ -14,6 +14,7 @@ Udemy terraform course
     - terraform apply
     - terraform destroy: destruye todos los objetos que tenemos en la configuracion de terraform
     - terraform validate: validaciond sintactica del codigo
+    - terraform format: ctrl + shift + I
 
 
 Revisar system manager
@@ -48,4 +49,8 @@ TargetGroup: objeto que identifica instancias que ve el balanceador para enrutar
   -> aws_lb_target_group_attachment: endpoints
   -> aws_lb_listener: relacion de las 2 anteriores
 
-Terraform workflow: 
+Variables:
+  fichero variables.tf
+  tipos simples y compuestos
+  palabra reservada var
+  

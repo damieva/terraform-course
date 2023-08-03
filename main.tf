@@ -1,5 +1,5 @@
 provider "aws" {
-  region="eu-west-2"
+  region = "eu-west-2"
 }
 
 // Ejemplos de datasources (elementos fuera de la gestion de terraform sobre los que podemos hacer queries definiendo estos objetos):
@@ -13,16 +13,16 @@ data "aws_subnet" "az_b" {
 
 resource "aws_instance" "server-1" {
   ami                    = "ami-007ec828a062d87a5"
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   vpc_security_group_ids = [aws_security_group.my_security_group.id]
   subnet_id              = data.aws_subnet.az_a.id
 
   user_data = <<-EOF
               #!/bin/bash
               echo "Hola Terraformers soy server-1!" > index.html
-              nohup busybox httpd -f -p 8080 &
+              nohup busybox httpd -f -p ${var.port_server} &
               EOF
-  
+
   tags = {
     Name = "server-1"
   }
@@ -30,16 +30,16 @@ resource "aws_instance" "server-1" {
 
 resource "aws_instance" "server-2" {
   ami                    = "ami-007ec828a062d87a5"
-  instance_type          = "t2.micro"
+  instance_type          = var.instance_type
   vpc_security_group_ids = [aws_security_group.my_security_group.id]
   subnet_id              = data.aws_subnet.az_b.id
 
   user_data = <<-EOF
               #!/bin/bash
               echo "Hola Terraformers soy server-2!" > index.html
-              nohup busybox httpd -f -p 8080 &
+              nohup busybox httpd -f -p ${var.port_server} &
               EOF
-  
+
   tags = {
     Name = "server-2"
   }
@@ -50,10 +50,10 @@ resource "aws_security_group" "my_security_group" {
 
   ingress {
     security_groups = [aws_security_group.alb.id]
-    description = "Acceso al puerto 8080 desde el exterior"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "TCP" 
+    description     = "Acceso al puerto 8080 desde el exterior"
+    from_port       = var.port_server
+    to_port         = var.port_server
+    protocol        = "TCP"
   }
 }
 
@@ -69,20 +69,20 @@ resource "aws_security_group" "alb" {
 
   //puede ser accedido a traves del puerto 80
   ingress {
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
     description = "Acceso al puerto 80 desde el exterior"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "TCP" 
+    from_port   = var.port_lb
+    to_port     = var.port_lb
+    protocol    = "TCP"
   }
 
   //puede acceder al puerto 8080
   egress {
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = ["0.0.0.0/0"]
     description = "Acceso al puerto 8080 desde el LB"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "TCP" 
+    from_port   = var.port_server
+    to_port     = var.port_server
+    protocol    = "TCP"
   }
 }
 
@@ -93,7 +93,7 @@ data "aws_vpc" "default" {
 // si no tenemos ningun otro recurso de ese tipo, lo podemos llamar this
 resource "aws_lb_target_group" "this" {
   name     = "terraform-alb-target-group"
-  port     = 80
+  port     = var.port_lb
   vpc_id   = data.aws_vpc.default.id
   protocol = "HTTP"
 
@@ -101,7 +101,7 @@ resource "aws_lb_target_group" "this" {
     enabled  = true
     matcher  = "200"
     path     = "/"
-    port     = "8080"
+    port     = var.port_server
     protocol = "HTTP"
   }
 }
@@ -109,18 +109,18 @@ resource "aws_lb_target_group" "this" {
 resource "aws_lb_target_group_attachment" "server-1" {
   target_group_arn = aws_lb_target_group.this.arn
   target_id        = aws_instance.server-1.id
-  port             = "8080"
+  port             = var.port_server
 }
 
 resource "aws_lb_target_group_attachment" "server-2" {
   target_group_arn = aws_lb_target_group.this.arn
   target_id        = aws_instance.server-2.id
-  port             = "8080"
+  port             = var.port_server
 }
 
 resource "aws_lb_listener" "this" {
   load_balancer_arn = aws_lb.alb.arn
-  port              = 80
+  port              = var.port_lb
   protocol          = "HTTP"
 
   default_action {
