@@ -186,3 +186,41 @@ provider "aws" {
 
 # Terraform cloud:
   - ejecutar los comandos desde nuestra maquina no siempre es seguro, esto lo resuelve Terraform cloud
+  - vamos a terraform cloud y creamos una cuenta
+  - creamos una organizacion
+  - creamos un workspace
+  - ejecutamos 'terraform login' para indicarle a cloud q puede ejecutar comandos en la cuenta de aws que queremos
+  - Es de pago
+  - El ejemplo no esta completamente testado, mejor opcion la de S3
+
+# Workspaces:
+  - Terraform workspace show
+  - Terraform workspace list
+  - Terraform workspace new dev
+  - En s3 habra una carpeta env y dentro ya estara la clave de nuestro proyecto
+```
+terraform {
+  backend "s3" {
+    bucket = "tf-infrastructure-as-code"
+    key    = "workspaces/terraform.tfstate"
+    region = "eu-west-2"
+
+    dynamodb_table = "tf-infrastructure-as-code-locks"
+    encrypt        = true
+  }
+}
+```
+
+# Terraform Import:
+  - sirve para que un recurso existente pero no gestionado por terraform (no esta en el state), lo empiece a gestionar (añadir al state).
+  - Ejemplo: terraform import aws_instance.servidor i-00ebabdf61f9a3290
+  - Despues de esto al hacer al intentar un terraform plan ya dirá que no hay cambios porque esta todo en el state, pero no en el codigo!!
+
+# Renombrar recurso:
+  - comandos del estado:
+    * terraform state list: listar recursos
+    * terraform state rm: borrar un recurso del estado
+    * terraform state mv aws_instance.servidor aws_instance.servidor_micro: renombrar objeto en el estado
+
+# Configuration drift:
+  - cuando hay un cambio en un recurso de aws fuera de terraform, al hacer un apply, terraform intenta eliminar ese cambio en el recurso y lo va a restaurar al valor de su estado.
