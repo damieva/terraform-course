@@ -172,3 +172,17 @@ provider "aws" {
   - terraform validate
   - terraform plan
   - terraform apply
+
+# Terraform backends:
+  - definimos donde se almacena el state y donde vamos a ejecutar los comandos de terraform
+  - por defecto terraform utiliza el backend local
+  - hay 2 tipos de backends:
+    * standard: solo implementa el almacenamiento del state, los comandos se seguiran lanzando en el backend local
+    * enhanced: implementa las 2 cosas.
+  - El backend 'remote' es de tipo enhanced y usa Terraform Cloud para almacenar el state y para ejecutar los comandos.
+  - El escenario que vamos a plantear es utilizar un bucket de S3 para guardar el state (backend standard) y una DB de DynamoDB para bloquear el acceso al mismo cuando se esté utilizando. Al tratarse de un backend standard seguiremos ejecutando nuestros comandos en local.
+  - Al meter un backend nuevo siempre tenemos que volver a hacer terraform init para reconfigurar el entorno terraform.
+  - Para crear un backend remoto necesitaremos crear un backend local, crear el bucket y la tabla de dynamo. Para elminar el backend necesitaremos hacer el proceso inverso: quitar el backend, bajarnos el state y eliminar los recursos del backend (bucket y tabla de dynamo).
+
+# Terraform cloud:
+  - ejecutar los comandos desde nuestra maquina no siempre es seguro, esto lo resuelve Terraform cloud
