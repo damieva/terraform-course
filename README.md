@@ -165,3 +165,10 @@ provider "aws" {
 
 # ToDo:
   - poner nuestra infra en una vpc sin desde internet
+
+# Commands to run the infra:
+  - export AWS_PROFILE=my_infra
+  - cd env/dev && terraform init
+  - terraform validate
+  - terraform plan
+  - terraform apply
