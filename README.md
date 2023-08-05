@@ -72,4 +72,96 @@ variable "instance_type" {
   default     = "t2.micro"
 }
 ```
-  
+  - Podríamos elegir el valor de una variable en funcion de la key que queramos seleccionar. Por Ejemplo:
+```
+ami                    = var.ubuntu_ami["eu-west-2"]
+---
+variable "ubuntu_ami" {
+  description = "AMI per region"
+  type        = map(string)
+  default = {
+    "eu-west-1" = "ami-0136ddddd07f0584f"
+    "eu-west-2" = "ami-007ec828a062d87a5"
+  }
+}
+```
+  - Podriamos añadir un bloque 'validation' en la definicion de la variable para mostrar un mensaje en el caso de introducir un valor erroneo de la misma. Por ejemplo:
+```
+variable "port_server" {
+  description = "Instancies port"
+  type        = number
+  default     = 8080
+  validation {
+    condition = var.port_server > 0 && var.port_server <= 65536
+    error_message = "The server port has to be in range 1-65536"
+  }
+}
+```
+
+# Terraform loops: (count and for_each)
+  - Count:
+    * Repite un recurso n veces
+    * Un recurso se convierte en una lista de recursos. Ej: - aws_instance.server[0] y - aws_instance.server[1]
+    * El problema de el bucle count es que si utilizamos la siguiente lista de 3 variables ['pepe', 'jose', 'luis'] y borramos uno de ellos ['pepe', luis], en este caso se eliminara jose y tb luis porque el lugar de luis en la lista no sera el mismo que antes.
+    * tenemos que utilizar el metargumento count, la funcion lenght y otro metargumento count.index de la siguiente forma:
+```
+variable "usuarios" {
+  description = "Nombre de usuarios IAM"
+  type        = list(string)
+}
+
+resource "aws_iam_user" "ejemplo" {
+  count = length(var.usuarios)
+
+  name = "usuario-${var.usuarios[count.index]}"
+}
+```
+
+  - For_each:
+    * Itera sobre un set o un map
+    * Las variables han de ser totalmente conocidas en el momento del terraform apply, por lo tanto no podremos hacer un for_each sobre un grupo de recursos que aun no ha sido creado (Ejemplo: los IDs de las instancias en el objeto aws_lb_target_group_attachment no han sido creadas antes de pasarselas en un for_each a este objeto, por eso no nos deja crearlo -> solucion: implementarlo con un bucle count o utilizar targets).
+    * Podemos usar each.key y each.value como metargumentos para acceder a los valores actuales.
+    * Un recurso en vez de convertirse en una lista de recursos se convertira en un mapa de recursos: - aws_instance.servidor["server-1"] y - aws_instance.servidor["server-2"]
+    * Ejemplo:
+```
+variable "usuarios" {
+  description = "Nombre usuarios IAM"
+  type        = set(string)
+}
+
+resource "aws_iam_user" "ejemplo" {
+  for_each = var.usuarios
+
+  name = "usuario-${each.value}"
+}
+```
+
+# Expresiones splat:
+  * sirven para iterar sobre un elemento lista: por ejemplo cuando solo uno de los parametros de un objeto nos requiere una lista.
+```
+resource "aws_lb" "alb" {
+  subnets            = [for subnet in data.aws_subnet.public_subnet : subnet.id]
+}
+
+```
+
+# Vbles locales:
+  - se pueden referenciar desde otro fichero siempre que esten en el mismo directorio
+  - Ejemplo:
+```
+locals {
+  region = "eu-west-1"
+  ami    = var.ubuntu_ami[local.region]
+}
+
+provider "aws" {
+  region = local.region
+}
+```
+
+# Terraform Modules:
+  - son funciones abstractas que pasandoles una serie de parametros nos crean recursos, por ejemplo: EC2-instances o ELB, EKS, etc..
+  - módulos open-source y verificados por Hashicorp: https://registry.terraform.io/browse/modules
+
+# ToDo:
+  - poner nuestra infra en una vpc sin desde internet
